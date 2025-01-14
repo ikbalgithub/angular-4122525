@@ -10,3 +10,14 @@ export const MUTATION_REGISTER = gql`
     }
   }
 `
+
+export const MUTATION_CREATE_PROFILE = gql`
+  mutation($dto:ProfileDto!){
+    createProfile(dto:$dto){
+      profileImage
+      firstName
+      surname
+      usersRef
+    }
+  }
+`

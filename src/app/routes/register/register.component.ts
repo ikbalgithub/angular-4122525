@@ -3,7 +3,7 @@ import { GoogleAuthProvider,getAuth,signInWithPopup } from "firebase/auth";
 import { FirebaseService } from '../../services/firebase/firebase.service';
 import { GraphqlService } from '../../graphql/graphql.service';
 import { QUERY_TEST } from '../../graphql/graphql.queries';
-import { MUTATION_REGISTER } from '../../graphql/graphql.mutation';
+import { MUTATION_CREATE_PROFILE, MUTATION_REGISTER } from '../../graphql/graphql.mutation';
 
 @Component({
   selector: 'app-register',
@@ -15,25 +15,46 @@ export class RegisterComponent {
   graphql = inject(GraphqlService)
   firebase = inject(FirebaseService)
 
-  onSuccessSignInWithGoogle({uid,...rest}:any){
-    var dto = {oauthReference:uid}
-    this.graphql.mutate(
-      {
-        mutation:MUTATION_REGISTER,
-        variables:{dto:dto}
-      }
-    )
-    .subscribe(
-      r => this.login(r.data)
-    )
+  onSuccessSignInWithGoogle(result:SIGNUPWITHGOOGLERESULT){
+    var oauthReference = result.uid
+    
+    this.graphql.mutate<REGISTERRESULT,REGISTERDTO>({
+      mutation:MUTATION_REGISTER,
+      variables:{dto:{oauthReference}}
+    })
+    .subscribe(r => {
+      var data = r.data as REGISTERRESULT
+      this.login(result,data)
+    })
   }
 
-  login({existed,...rest}:any){
-    if(existed){
+  login(result:SIGNUPWITHGOOGLERESULT,data:REGISTERRESULT){
+    var profileImage = result.photoURL
+    var name = result.displayName as string
+    var [firstName,surname] = name.split(' ')
+    var usersRef = data.data._id
+
+    var variables = {
+      dto:{
+        profileImage,
+        surname,
+        firstName,
+        usersRef
+      }
+    }
+
+    if(data.data.existed){
 
     }
     else{
-      
+      console.log(variables)
+      this.graphql.mutate({
+        mutation:MUTATION_CREATE_PROFILE,
+        variables
+      })
+      .subscribe(r => {
+        console.log(r.data)
+      })
     }
   }
 
