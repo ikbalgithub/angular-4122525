@@ -17,7 +17,6 @@ export const MUTATION_CREATE_PROFILE = gql`
       profileImage
       firstName
       surname
-      usersRef
     }
   }
 `

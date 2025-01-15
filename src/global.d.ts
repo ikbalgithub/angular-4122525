@@ -6,7 +6,7 @@ declare global{
   }
 
   interface REGISTERRESULT{
-    data:{
+    register:{
       existed:boolean,
       authorization:string,
       username:string,
@@ -17,6 +17,16 @@ declare global{
   interface REGISTERDTO{
     dto:{
       oauthReference:string
+    }
+  }
+
+  interface CREATEPROFILERESULT{
+    createProfile:{
+      _id:string,
+      profileImage:string,
+      surname:string,
+      firstName:string,
+      usersRef:string
     }
   }
 }

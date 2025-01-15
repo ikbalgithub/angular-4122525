@@ -8,6 +8,13 @@ import { HttpLink } from 'apollo-angular/http';
 
 import { routes } from './app.routes';
 import { provideHttpClient } from '@angular/common/http';
+import { provideStore } from '@ngxs/store';
+import { withNgxsReduxDevtoolsPlugin } from '@ngxs/devtools-plugin';
+import { withNgxsFormPlugin } from '@ngxs/form-plugin';
+import { withNgxsLoggerPlugin } from '@ngxs/logger-plugin';
+import { withNgxsRouterPlugin } from '@ngxs/router-plugin';
+import { withNgxsStoragePlugin } from '@ngxs/storage-plugin';
+import { withNgxsWebSocketPlugin } from '@ngxs/websocket-plugin';
 
 const uri = 'https://3000-idx-nest-3141825-1736324093764.cluster-3g4scxt2njdd6uovkqyfcabgo6.cloudworkstations.dev/graphql'
 
@@ -46,5 +53,7 @@ export const appConfig: ApplicationConfig = {
       }
     })
     ,
-    provideRouter(routes)]
+    provideRouter(routes),
+    provideStore()
+  ]
 };

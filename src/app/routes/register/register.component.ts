@@ -4,6 +4,7 @@ import { FirebaseService } from '../../services/firebase/firebase.service';
 import { GraphqlService } from '../../graphql/graphql.service';
 import { QUERY_TEST } from '../../graphql/graphql.queries';
 import { MUTATION_CREATE_PROFILE, MUTATION_REGISTER } from '../../graphql/graphql.mutation';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-register',
@@ -12,10 +13,12 @@ import { MUTATION_CREATE_PROFILE, MUTATION_REGISTER } from '../../graphql/graphq
   styleUrl: './register.component.css'
 })
 export class RegisterComponent {
+  clicked = false
+  router = inject(Router)
   graphql = inject(GraphqlService)
   firebase = inject(FirebaseService)
 
-  onSuccessSignInWithGoogle(result:SIGNUPWITHGOOGLERESULT){
+  onSuccessSignUpWithGoogle(result:SIGNUPWITHGOOGLERESULT){
     var oauthReference = result.uid
     
     this.graphql.mutate<REGISTERRESULT,REGISTERDTO>({
@@ -28,11 +31,12 @@ export class RegisterComponent {
     })
   }
 
-  login(result:SIGNUPWITHGOOGLERESULT,data:REGISTERRESULT){
+  login(result:SIGNUPWITHGOOGLERESULT,data:REGISTERRESULT):void{
     var profileImage = result.photoURL
     var name = result.displayName as string
+    var authorization = data.register.authorization
     var [firstName,surname] = name.split(' ')
-    var usersRef = data.data._id
+    var usersRef = data.register._id
 
     var variables = {
       dto:{
@@ -43,17 +47,27 @@ export class RegisterComponent {
       }
     }
 
-    if(data.data.existed){
+    if(data.register.existed){
+       var profile = {
+         profileImage,
+         firstName,
+         surname
+       }
 
+       localStorage.setItem('authorization',authorization)
+       localStorage.setItem('profile',JSON.stringify(profile))
+       this.router.navigate([''])
     }
     else{
-      console.log(variables)
-      this.graphql.mutate({
+      this.graphql.mutate<CREATEPROFILERESULT,any>({
         mutation:MUTATION_CREATE_PROFILE,
         variables
       })
       .subscribe(r => {
-        console.log(r.data)
+        var profile = r.data?.createProfile
+        localStorage.setItem('authorization',authorization)
+        localStorage.setItem('profile',JSON.stringify(profile))
+        this.router.navigate([''])
       })
     }
   }
@@ -78,11 +92,13 @@ export class RegisterComponent {
   }
 
   async signUpWithGoogle(){
+    this.clicked = true
+
     try{
       var auth = getAuth()
       var provider = new GoogleAuthProvider()
       var account = await signInWithPopup(auth,provider)
-      this.onSuccessSignInWithGoogle(account.user.providerData[0])
+      this.onSuccessSignUpWithGoogle(account.user.providerData[0])
     }
     catch(e:any){
       console.error(e)
