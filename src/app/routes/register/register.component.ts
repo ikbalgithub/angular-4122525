@@ -5,6 +5,9 @@ import { GraphqlService } from '../../graphql/graphql.service';
 import { QUERY_TEST } from '../../graphql/graphql.queries';
 import { MUTATION_CREATE_PROFILE, MUTATION_REGISTER } from '../../graphql/graphql.mutation';
 import { Router } from '@angular/router';
+import { Store } from '@ngxs/store';
+import { SetAuthorization } from '../../store/authorization/authorization.actions';
+import { SetProfile } from '../../store/profile/profile.actions';
 
 @Component({
   selector: 'app-register',
@@ -14,31 +17,32 @@ import { Router } from '@angular/router';
 })
 export class RegisterComponent {
   clicked = false
+  store = inject(Store)
   router = inject(Router)
   graphql = inject(GraphqlService)
   firebase = inject(FirebaseService)
 
-  onSuccessSignUpWithGoogle(result:SIGNUPWITHGOOGLERESULT){
+  onSuccessSignUpWithGoogle(result:Oauth.SignUpWithGoogleResult){
     var oauthReference = result.uid
-    
-    this.graphql.mutate<REGISTERRESULT,REGISTERDTO>({
+    var vars = {dto:{oauthReference}}
+    this.graphql.mutate<Graphql.RegisterResult,typeof vars>({
       mutation:MUTATION_REGISTER,
-      variables:{dto:{oauthReference}}
+      variables:vars
     })
     .subscribe(r => {
-      var data = r.data as REGISTERRESULT
+      var data = r.data as Graphql.RegisterResult
       this.login(result,data)
     })
   }
 
-  login(result:SIGNUPWITHGOOGLERESULT,data:REGISTERRESULT):void{
-    var profileImage = result.photoURL
+  login(result:Oauth.SignUpWithGoogleResult,data:Graphql.RegisterResult){
+    var profileImage = result.photoURL as string
     var name = result.displayName as string
     var authorization = data.register.authorization
     var [firstName,surname] = name.split(' ')
     var usersRef = data.register._id
 
-    var variables = {
+    var vars = {
       dto:{
         profileImage,
         surname,
@@ -54,41 +58,27 @@ export class RegisterComponent {
          surname
        }
 
-       localStorage.setItem('authorization',authorization)
-       localStorage.setItem('profile',JSON.stringify(profile))
+       this.store.dispatch(new SetAuthorization(authorization))
+       this.store.dispatch(new SetProfile(profile))
        this.router.navigate([''])
     }
     else{
-      this.graphql.mutate<CREATEPROFILERESULT,any>({
+      this.graphql.mutate<Graphql.CreateProfileResult,typeof vars>({
         mutation:MUTATION_CREATE_PROFILE,
-        variables
+        variables:vars
       })
       .subscribe(r => {
-        var profile = r.data?.createProfile
-        localStorage.setItem('authorization',authorization)
-        localStorage.setItem('profile',JSON.stringify(profile))
+        var profile = r.data?.createProfile as Shared.Profile
+        this.store.dispatch(new SetAuthorization(authorization))
+        this.store.dispatch(new SetProfile(profile))
         this.router.navigate([''])
       })
     }
   }
 
   test(){
-    var credential = {
-      username:'usr',
-      password:'x'
-    }
-    var variables = {
-      credential
-    }
-    this.graphql.query(
-      {
-        query:QUERY_TEST,
-        variables
-      }
-    )
-    .subscribe(
-      r => console.log(r.data)
-    )
+    this.store.dispatch(new SetAuthorization('xxx'))
+    console.log('done')
   }
 
   async signUpWithGoogle(){

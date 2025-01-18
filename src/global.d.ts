@@ -1,32 +1,42 @@
 declare global{
-  interface SIGNUPWITHGOOGLERESULT {
-    uid:string,
-    photoURL:string|null,
-    displayName:string|null
+  namespace Oauth{
+    interface SignUpWithGoogleResult {
+      uid:string,
+      photoURL:string|null,
+      displayName:string|null
+    }
   }
+  
+  namespace Graphql{
+    interface RegisterResult{
+      register:{
+        existed:boolean,
+        authorization:string,
+        username:string,
+        _id:string
+      }
+    }
 
-  interface REGISTERRESULT{
-    register:{
-      existed:boolean,
-      authorization:string,
-      username:string,
-      _id:string
+    interface CreateProfileResult{
+      createProfile:{
+        _id:string,
+        profileImage:string,
+        surname:string,
+        firstName:string,
+        usersRef:string
+      }
+    }
+
+    interface SearchResult{
+      search:{profile:Shared.Profile}[]
     }
   }
 
-  interface REGISTERDTO{
-    dto:{
-      oauthReference:string
-    }
-  }
-
-  interface CREATEPROFILERESULT{
-    createProfile:{
-      _id:string,
+  namespace Shared{
+    interface Profile{
       profileImage:string,
       surname:string,
       firstName:string,
-      usersRef:string
     }
   }
 }

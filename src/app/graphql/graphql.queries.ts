@@ -8,3 +8,15 @@ export const QUERY_TEST = gql`
     }
   }
 `
+
+export const QUERY_SEARCH = gql`
+  query($username:String!){
+    search(username:$username){
+      profile{
+        profileImage
+        surname
+        firstName
+      }
+    }
+  }
+`
