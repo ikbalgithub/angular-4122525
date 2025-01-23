@@ -1,1 +1,30 @@
-x
+<div *ngIf="history().length < 1" class="h-full border-2 border-blue-900 flex flex justify-center items-center">
+  <button class="bg-blue-500 rounded-full p-5 text-white">
+    Write new message!
+  </button>
+</div>
+
+<div *ngIf="history().length > 0" class="min-h-full max-h-fit border-2 border-blue-900 flex flex-col relative">
+  <form class="relative flex flex-col justify-center bg-black p-3 sticky top-0">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6 absolute text-white right-7">
+      <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+    </svg>    
+    <input
+      type="text"
+      placeholder="who are you looking for?"
+      class="p-3 rounded-full border-2 border-white w-full px-5 text-white"
+    />
+  </form>
+  <div class="flex flex-col gap-6 p-3 px-4">
+    @for(h of history(); track h){
+      <div class="border-2 border-white rounded p-3 flex flex-row gap-3 items-center">
+        <img [src]="h.profile.profileImage" class="h-[64px] rounded-full"/>
+        <div class="flex flex-col gap-2">
+          <span class="text-white">{{h.profile.firstName}} {{h.profile.surname}}</span>
+          <span class="text-white">{{h.lastMessage?.value}} </span>
+        </div>
+      </div>
+    }
+    
+  </div>
+</div>
