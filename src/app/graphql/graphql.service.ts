@@ -9,18 +9,10 @@ import { Apollo } from 'apollo-angular';
 export class GraphqlService {
   apollo = inject(Apollo)
   
-  httpHeaders = new HttpHeaders({
-    'authorization':'xxx',
-    'bypass-tunnel-reminder':'true',
-    'credentials':'include'
-  })
-
   query<R,V extends OperationVariables>(opts:QueryOptions<V>){
-    var context = {headers:this.httpHeaders}
     var result =  this.apollo.watchQuery<R,V>(
       {
         ...opts,
-        context,
       }
     )
 
@@ -28,11 +20,9 @@ export class GraphqlService {
   }
 
   mutate<R,V extends OperationVariables>(opts:MutationOptions<V>){
-    var context = {headers:this.httpHeaders}
     return this.apollo.mutate<R,V>(
       {
         ...opts,
-        context,
       }
     )
     

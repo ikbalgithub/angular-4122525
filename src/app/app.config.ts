@@ -7,15 +7,18 @@ import { HttpLink } from 'apollo-angular/http';
 
 
 import { routes } from './app.routes';
-import { provideHttpClient } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideStore } from '@ngxs/store';
 import { withNgxsLoggerPlugin } from '@ngxs/logger-plugin';
 import { withNgxsStoragePlugin } from '@ngxs/storage-plugin';
 import { AuthorizationState } from './store/authorization/authorization.state';
 import { ProfileState } from './store/profile/profile.state';
+import { httpInterceptor } from './interceptors/http/http.interceptor';
+import { HistoryState } from './store/history/history.state';
+import { MessagesState } from './store/messages/messages.state';
 
 
-const uri = 'https://3000-idx-nest-3141825-1736324093764.cluster-3g4scxt2njdd6uovkqyfcabgo6.cloudworkstations.dev/graphql'
+const uri = 'https://8000-idx-nest-3141825-1736324093764.cluster-3g4scxt2njdd6uovkqyfcabgo6.cloudworkstations.dev/graphql'
 
 const initCache = async () => {
   const cache = new InMemoryCache()
@@ -26,12 +29,8 @@ const initCache = async () => {
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
-    {
-      provide:APP_INITIALIZER,
-      useFactory:() => initCache,
-      multi:true
-    },
-    provideHttpClient(),
+    {provide:APP_INITIALIZER,useFactory:() => initCache,multi:true},
+    provideHttpClient(withInterceptors([httpInterceptor])),
     provideApollo(() => {
       const cache = new InMemoryCache()
       const storage = new LocalStorageWrapper(
@@ -53,13 +52,9 @@ export const appConfig: ApplicationConfig = {
     }),
     provideRouter(routes),
     provideStore(
-      [AuthorizationState,ProfileState], 
-      withNgxsStoragePlugin({
-        keys: '*'
-      }),
-      withNgxsLoggerPlugin(
-        // options
-      ),
+      [AuthorizationState,ProfileState,HistoryState,MessagesState], 
+      withNgxsStoragePlugin({keys: '*'}),
+      withNgxsLoggerPlugin(),
     )
   ]
 };

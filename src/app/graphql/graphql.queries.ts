@@ -1,14 +1,5 @@
 import { gql } from "apollo-angular";
 
-export const QUERY_TEST = gql`
-  query($credential:LoginDto!){
-    test(credential:$credential){
-      username
-      password
-    }
-  }
-`
-
 export const QUERY_SEARCH = gql`
   query($username:String!){
     search(username:$username){
@@ -16,7 +7,24 @@ export const QUERY_SEARCH = gql`
         profileImage
         surname
         firstName
+        usersRef
       }
+    }
+  }
+`
+
+export const QUERY_GET_MESSAGES = gql`
+  query($_id:String!){
+    getMessages(_id:$_id){
+      _id
+      sender
+      receiver
+      groupId
+      value
+      sendAt
+      read
+      contentType
+      description
     }
   }
 `

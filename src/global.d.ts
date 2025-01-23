@@ -30,6 +30,24 @@ declare global{
     interface SearchResult{
       search:{profile:Shared.Profile}[]
     }
+
+    interface SendMessageResult{
+      sendMessage:{
+        _id:string,
+        groupId:string,
+        value:string,
+        sender:string,
+        receiver:string,
+        read:boolean,
+        contentType:string,
+        description:string,
+        sendAt:number,
+      }
+    }
+    
+    interface GetMessagesResult{
+      getMessages:SendMessageResult.sendMessage[]
+    }
   }
 
   namespace Shared{
@@ -37,8 +55,35 @@ declare global{
       profileImage:string,
       surname:string,
       firstName:string,
+      usersRef:string
     }
   }
+
+  namespace Ngxs{
+    interface History{
+      _id:string,
+      groupId:string,
+      lastMessage:Message.Last|null,
+      profile:Shared._Profile
+    }
+  }
+
+  namespace Message{
+    interface Last{
+      _id:string,
+      contentType:string,
+      value:string,
+      sendAt:number
+      read:boolean,
+      send:boolean,
+      sender:string
+    }  
+    type M = Graphql.SendMessageResult & {
+      send:boolean
+    }
+  }
+
+
 }
 
 export{

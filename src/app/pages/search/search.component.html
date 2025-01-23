@@ -2,7 +2,7 @@
   <form class="p-3 relative flex flex-col justify-center">
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6 absolute left-6">
       <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
-    </svg>    
+    </svg>
     <input
       name="param"
       type="text"
@@ -15,14 +15,14 @@
   <div class="flex flex-col gap-3 p-3">
     @for(r of result; track r){
       <div class="border-4 border-black-900 p-3 flex flex-row items-center gap-3 ">
-        <a href="/profile">
+        <a routerLink="/profile">
           <img
             [src]="r.profileImage"
             class="rounded-full h-[64px]"
           />
         </a>
-        <a href="/xxx">
-          <span>{{r.surname}} {{r.firstName}}</span>
+        <a routerLink="/messages/{{r.usersRef}}" [state]="{_:r,groupId:''}">
+          <span>{{r.firstName}} {{r.surname}}</span>
         </a>
       
       </div>

@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { Action, Selector, State, StateContext } from "@ngxs/store";
-import { SetAuthorization } from "./authorization.actions";
+import { Authorization, } from "./authorization.actions";
 
 @State<string|null>({
   name: 'authorization',
@@ -8,11 +8,7 @@ import { SetAuthorization } from "./authorization.actions";
 })
 
 @Injectable() export class AuthorizationState{
-  @Action(SetAuthorization) setAuthorization (ctx:StateContext<string|null>,act:SetAuthorization){
+  @Action(Authorization) set (ctx:StateContext<string|null>,act:Authorization){
     ctx.setState(act.payload)
-  }
-
-  @Selector() static isAuthenticated(state:string|null){
-    return Boolean(state)
   }
 }

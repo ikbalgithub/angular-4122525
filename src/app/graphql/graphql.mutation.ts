@@ -12,11 +12,27 @@ export const MUTATION_REGISTER = gql`
 `
 
 export const MUTATION_CREATE_PROFILE = gql`
-  mutation($dto:ProfileDto!){
+  mutation($dto:CreateProfileDto!){
     createProfile(dto:$dto){
       profileImage
       firstName
       surname
+    }
+  }
+`
+
+export const MUTATION_SEND_MESSAGE = gql`
+  mutation($dto:NewMessageDto!){
+    sendMessage(dto:$dto){
+      _id
+      sender
+      receiver
+      value
+      groupId
+      contentType
+      description
+      read
+      sendAt
     }
   }
 `

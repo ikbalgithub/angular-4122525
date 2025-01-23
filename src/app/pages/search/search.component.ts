@@ -2,10 +2,11 @@ import { Component, inject, signal } from '@angular/core';
 import { GraphqlModule } from '../../graphql/graphql.module';
 import { GraphqlService } from '../../graphql/graphql.service';
 import { QUERY_SEARCH } from '../../graphql/graphql.queries';
+import { RouterLink, RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-search',
-  imports: [],
+  imports: [RouterModule,RouterLink],
   templateUrl: './search.component.html',
   styleUrl: './search.component.css'
 })
@@ -16,6 +17,10 @@ export class SearchComponent {
   onSearchKeywordChange(target:any){
     var keyword = target.value as string
     if(keyword.length > 0) this.search(keyword)
+  }
+
+  test(){
+    alert('ok')
   }
 
   search(username:string){

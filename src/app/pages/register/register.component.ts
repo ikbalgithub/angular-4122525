@@ -2,12 +2,11 @@ import { Component, inject } from '@angular/core';
 import { GoogleAuthProvider,getAuth,signInWithPopup } from "firebase/auth";
 import { FirebaseService } from '../../services/firebase/firebase.service';
 import { GraphqlService } from '../../graphql/graphql.service';
-import { QUERY_TEST } from '../../graphql/graphql.queries';
 import { MUTATION_CREATE_PROFILE, MUTATION_REGISTER } from '../../graphql/graphql.mutation';
 import { Router } from '@angular/router';
 import { Store } from '@ngxs/store';
-import { SetAuthorization } from '../../store/authorization/authorization.actions';
-import { SetProfile } from '../../store/profile/profile.actions';
+import { Authorization } from '../../store/authorization/authorization.actions';
+import { Profile } from '../../store/profile/profile.actions';
 
 @Component({
   selector: 'app-register',
@@ -55,11 +54,12 @@ export class RegisterComponent {
        var profile = {
          profileImage,
          firstName,
-         surname
+         surname,
+         usersRef
        }
 
-       this.store.dispatch(new SetAuthorization(authorization))
-       this.store.dispatch(new SetProfile(profile))
+       this.store.dispatch(new Authorization(authorization))
+       this.store.dispatch(new Profile(profile))
        this.router.navigate([''])
     }
     else{
@@ -69,16 +69,15 @@ export class RegisterComponent {
       })
       .subscribe(r => {
         var profile = r.data?.createProfile as Shared.Profile
-        this.store.dispatch(new SetAuthorization(authorization))
-        this.store.dispatch(new SetProfile(profile))
+        this.store.dispatch(new Authorization(authorization))
+        this.store.dispatch(new Profile(profile))
         this.router.navigate([''])
       })
     }
   }
 
   test(){
-    this.store.dispatch(new SetAuthorization('xxx'))
-    console.log('done')
+  
   }
 
   async signUpWithGoogle(){
