@@ -7,7 +7,7 @@ import { HttpLink } from 'apollo-angular/http';
 
 
 import { routes } from './app.routes';
-import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideStore } from '@ngxs/store';
 import { withNgxsLoggerPlugin } from '@ngxs/logger-plugin';
 import { withNgxsStoragePlugin } from '@ngxs/storage-plugin';
@@ -47,6 +47,7 @@ export const appConfig: ApplicationConfig = {
       )
       return {
         link:httpLink.create({uri}),
+        connectToDevTools:true,
         cache
       }
     }),

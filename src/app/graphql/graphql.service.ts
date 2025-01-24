@@ -9,7 +9,7 @@ import { Apollo } from 'apollo-angular';
 export class GraphqlService {
   apollo = inject(Apollo)
   client = this.apollo.client
-  
+    
   query<R,V extends OperationVariables>(opts:QueryOptions<V>){
     var result =  this.apollo.watchQuery<R,V>(
       {
