@@ -10,7 +10,7 @@ import { MessageComponent } from './pages/message/message.component';
 export const routes: Routes = [
   {path:'',component:HomeComponent,canActivate:[authGuard]},
   {path:'messages',component:MessagesComponent,canActivate:[authGuard]},
-  {path:'messages/:groupId',component:MessageComponent,canActivate:[authGuard]},
+  {path:'messages/:_id',component:MessageComponent,canActivate:[authGuard]},
   {path:'login',component:LoginComponent,canActivate:[authGuard]},
   {path:'register',component:RegisterComponent},
   {path:'search',component:SearchComponent},

@@ -1,8 +1,8 @@
 import { Store } from '@ngxs/store';
 import { Types } from 'mongoose';
 import { Location } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { AddHistory, EditHistory } from '../../store/history/history.actions';
+import { Component, OnInit, computed, inject } from '@angular/core';
+import { AddHistory, EditHistory, ReplaceHistory } from '../../store/history/history.actions';
 import { CommonModule } from '@angular/common';
 import { HistoryComponent } from "../../partials/history/history.component";
 import { FormsModule } from '@angular/forms';
@@ -10,6 +10,10 @@ import { GraphqlService } from '../../graphql/graphql.service';
 import { MUTATION_SEND_MESSAGE } from '../../graphql/graphql.mutation';
 import { QUERY_GET_MESSAGES } from '../../graphql/graphql.queries';
 import { Messages } from '../../store/messages/messages.actions';
+import { MessagesState } from '../../store/messages/messages.state';
+import { ActivatedRoute } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { WatchQueryFetchPolicy } from '@apollo/client';
 
 @Component({
   imports: [CommonModule,HistoryComponent,FormsModule],
@@ -17,22 +21,24 @@ import { Messages } from '../../store/messages/messages.actions';
   styleUrl: './message.component.css'
 })
 export class MessageComponent implements OnInit {
-  message  = ''
-  store    = inject(Store)
-  location = inject(Location)
-  graphql  = inject(GraphqlService)
-  profile2  = window.history.state._ as Shared.Profile
-  groupId  = window.history.state.groupId as string
+  message     = ''
+  store       = inject(Store)
+  location    = inject(Location)
+  graphql     = inject(GraphqlService)
+  route       = inject(ActivatedRoute)
+  routeId     = this.route.snapshot.params['_id']
+  profile2    = window.history.state._ as Shared.Profile
+  groupId     = window.history.state.groupId as string
+  url         = undefined as Tmp<Subscription>
+  fetchPolicy = 'cache-only' as WatchQueryFetchPolicy
+
   profile1 = this.store.selectSnapshot<Shared.Profile>(s => {
     return s.profile
   })
   history  = this.store.selectSignal<Ngxs.History[]>(state => {
     return state.history
   })
-  messages  = this.store.selectSignal<Message.M[]>(state => {
-    return state.messages
-  })
-
+  
   send(){
     var groupId = this.groupId
     var value = this.message
@@ -44,7 +50,7 @@ export class MessageComponent implements OnInit {
       return h._id === this.profile2.usersRef
     })
 
-    this.store.dispatch(new EditHistory(
+    this.store.dispatch(new ReplaceHistory(
       {
         f:this.profile2.usersRef,
         m:{
@@ -78,17 +84,23 @@ export class MessageComponent implements OnInit {
       variables:vars
     })
     .subscribe({
-      next:r => console.log(r),
+      next:r => this.onSuccessSendMessage(r.data),
       error:e => console.log(e.message)
     })
   }
 
-  ngOnInit(){
+  onSuccessSendMessage(r:any){
+    r = r as Graphql.SendMessageResult
+    
+  }
+
+  setHistoryAndGroupId(){
     var [filter] = this.history().filter(h => {
       return h._id === this.profile2.usersRef
     })
 
     if(filter){
+      // set groupId
       this.groupId = filter.groupId
     }
 
@@ -96,6 +108,7 @@ export class MessageComponent implements OnInit {
       var groupId = new Types.ObjectId()
       var groupIdStr = groupId.toString()
       
+      // tambahkan history terbaru
       this.store.dispatch(new AddHistory({
         _id:this.profile2.usersRef,
         groupId:groupIdStr,
@@ -103,45 +116,56 @@ export class MessageComponent implements OnInit {
         lastMessage:null
       }))
 
+      // buat groupId
       this.groupId = groupIdStr
     }
+  }
 
+  isCached(){
+    var cache = this.graphql.client.readQuery<Graphql.GetMessagesResult>(
+      {
+        query:QUERY_GET_MESSAGES,
+        variables:{_id:this.routeId}
+      }
+    )
 
+    this.fetchPolicy = cache ? 'cache-only':'network-only'
+
+    
+    return cache?.getMessages
+  }
+
+  fetch(_id:string){
     var variables = {
-      _id:this.profile2.usersRef
+      $_id:_id
     }
     this.graphql.query<Graphql.GetMessagesResult,typeof variables>({
       query:QUERY_GET_MESSAGES,
+      fetchPolicy:this.fetchPolicy,
       variables
     })
     .subscribe(r => {
-      if(r.data.getMessages.length > 0){
-        var lastMessage = r.data.getMessages[r.data.getMessages.length -1]
-        this.store.dispatch(new Messages(
-          r.data.getMessages.map(m => {
-            return {
-              ...m,
-              send:true
-            }
-          })
-        ))
+      console.log(r)
+    })
+  }
 
-
-        this.store.dispatch(new EditHistory(
-          {
-            f:this.profile2.usersRef,
-            m:{
-              _id:lastMessage._id,
-              sender:lastMessage.sender,
-              contentType:lastMessage.contentType,
-              value:lastMessage.value,
-              read:lastMessage.read,
-              send:true,
-              sendAt:Date.now()
-            }
-          }
-        ))
+  ngOnInit(){
+    this.url = this.route.url.subscribe(c => {   
+      if(this.route.snapshot.params['_id'] !== this.routeId){
+        this.routeId = this.route.snapshot.params['_id']
+        this.groupId = window.history.state.groupId
+        this.profile2 = window.history.state._
+        this.isCached()
+        this.fetch(this.routeId)
+        this.setHistoryAndGroupId()
+      }
+      else{
+        this.isCached()
+        this.fetch(this.routeId)
+        this.setHistoryAndGroupId()
       }
     })
   }
 }
+
+type Tmp<T> = T | undefined

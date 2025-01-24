@@ -78,12 +78,23 @@ declare global{
       send:boolean,
       sender:string
     }  
-    type M = Graphql.SendMessageResult & {
-      send:boolean
+
+    interface M{
+      _id:string,
+      messages:{
+        _id:string,
+        groupId:string,
+        value:string,
+        sender:string,
+        receiver:string,
+        read:boolean,
+        contentType:string,
+        description:string,
+        sendAt:number,
+        send:boolean
+      }[]
     }
   }
-
-
 }
 
 export{
