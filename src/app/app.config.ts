@@ -31,6 +31,12 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     {provide:APP_INITIALIZER,useFactory:() => initCache,multi:true},
     provideHttpClient(withInterceptors([httpInterceptor])),
+    provideRouter(routes),
+    provideStore(
+      [AuthorizationState,ProfileState,HistoryState,MessagesState], 
+      withNgxsStoragePlugin({keys: '*'}),
+      withNgxsLoggerPlugin(),
+    ),
     provideApollo(() => {
       const cache = new InMemoryCache()
       const storage = new LocalStorageWrapper(
@@ -50,12 +56,6 @@ export const appConfig: ApplicationConfig = {
         connectToDevTools:true,
         cache
       }
-    }),
-    provideRouter(routes),
-    provideStore(
-      [AuthorizationState,ProfileState,HistoryState,MessagesState], 
-      withNgxsStoragePlugin({keys: '*'}),
-      withNgxsLoggerPlugin(),
-    )
+    })
   ]
 };
