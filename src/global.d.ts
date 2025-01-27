@@ -34,7 +34,6 @@ declare global{
     interface SendMessageResult{
       sendMessage:{
         _id:string,
-        groupId:string,
         value:string,
         sender:string,
         receiver:string,
@@ -46,7 +45,17 @@ declare global{
     }
     
     interface GetMessagesResult{
-      getMessages:SendMessageResult.sendMessage[]
+      getMessages:{
+        _id:string,
+        value:string,
+        sender:string,
+        receiver:string,
+        read:boolean,
+        contentType:string,
+        description:string,
+        sendAt:number,
+        status:string
+      }[]
     }
   }
 
@@ -62,7 +71,6 @@ declare global{
   namespace Ngxs{
     interface History{
       _id:string,
-      groupId:string,
       lastMessage:Message.Last|null,
       profile:Shared._Profile
     }
@@ -83,7 +91,6 @@ declare global{
       _id:string,
       messages:{
         _id:string,
-        groupId:string,
         value:string,
         sender:string,
         receiver:string,

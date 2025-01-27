@@ -13,18 +13,42 @@ export const QUERY_SEARCH = gql`
   }
 `
 
+export const QUERY_GET_HISTORY = gql`
+  query{
+    getHistory{
+      profile{
+        profileImage
+        firstName
+        surname
+        usersRef
+      }
+      message{
+        _id
+        value
+        sendAt
+        read
+        sender
+        receiver
+        contentType
+        description
+        status
+      }
+    }
+  }
+`
+
 export const QUERY_GET_MESSAGES = gql`
   query($_id:String!){
     getMessages(_id:$_id){
       _id
       sender
       receiver
-      groupId
       value
       sendAt
       read
       contentType
       description
+      status
     }
   }
 `

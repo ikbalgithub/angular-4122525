@@ -1,16 +1,13 @@
 import { Store } from '@ngxs/store';
 import { Types } from 'mongoose';
 import { Location } from '@angular/common';
-import { Component, OnInit, computed, inject } from '@angular/core';
-import { AddHistory, EditHistory, ReplaceHistory } from '../../store/history/history.actions';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HistoryComponent } from "../../partials/history/history.component";
 import { FormsModule } from '@angular/forms';
 import { GraphqlService } from '../../graphql/graphql.service';
 import { MUTATION_SEND_MESSAGE } from '../../graphql/graphql.mutation';
-import { QUERY_GET_MESSAGES } from '../../graphql/graphql.queries';
-import { Messages } from '../../store/messages/messages.actions';
-import { MessagesState } from '../../store/messages/messages.state';
+import { QUERY_GET_HISTORY, QUERY_GET_MESSAGES } from '../../graphql/graphql.queries';
 import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { WatchQueryFetchPolicy } from '@apollo/client';
@@ -28,64 +25,111 @@ export class MessageComponent implements OnInit {
   route       = inject(ActivatedRoute)
   routeId     = this.route.snapshot.params['_id']
   profile2    = window.history.state._ as Shared.Profile
-  groupId     = window.history.state.groupId as string
+  groupId     = new Types.ObjectId().toString()
   url         = undefined as Tmp<Subscription>
   fetchPolicy = 'cache-only' as WatchQueryFetchPolicy
 
   profile1 = this.store.selectSnapshot<Shared.Profile>(s => {
     return s.profile
   })
-  history  = this.store.selectSignal<Ngxs.History[]>(state => {
-    return state.history
+
+  historyCaches = this.graphql.client.cache.readQuery<any>({
+    query:QUERY_GET_HISTORY
   })
   
   send(){
-    var groupId = this.groupId
+    var now = Date.now()
     var value = this.message
     var sender = this.profile1.usersRef
     var receiver = this.profile2.usersRef
     var _id = new Types.ObjectId().toString()
+    var caches = this.isCached() as any[]
 
-    var [filter] = this.history().filter(h => {
-      return h._id === this.profile2.usersRef
-    })
-
-    this.store.dispatch(new ReplaceHistory(
-      {
-        f:this.profile2.usersRef,
-        m:{
-          _id,
-          sender,
-          contentType:'text',
-          value,
-          read:false,
-          send:false,
-          sendAt:Date.now()
-        }
-      }
-    ))
-  
     var vars ={
       dto:{
         _id,
-        groupId,
         value,
         sender,
         receiver,
         read:false,
         contentType:'text',
         description:'empty',
-        sendAt:Date.now(),
+        sendAt:now,
       }     
     }
+    
+    var cache = {
+      ...vars.dto,
+      __typename:"Message",
+      status:'inProcess'
+    }
+   
+    var getMessages = [
+      ...caches,
+      cache
+    ]
 
+    this.graphql.client.writeQuery(
+      {
+        query:QUERY_GET_MESSAGES,
+        variables:{_id:this.routeId},
+        data:{getMessages}
+      }
+    )
+   
     this.graphql.mutate<Graphql.SendMessageResult,typeof vars>({
       mutation:MUTATION_SEND_MESSAGE,
       variables:vars
     })
     .subscribe({
-      next:r => this.onSuccessSendMessage(r.data),
-      error:e => console.log(e.message)
+      next:r => {
+        var caches = [...this.isCached() as any[]]
+        var [filter] = caches.filter(c => c._id === _id)
+        var index = caches.findIndex(c => c._id === _id)
+
+        caches[index] = {
+          ...filter,
+          status:'successSend'
+        }
+
+        var data = {
+          getMessages:[
+            ...caches
+          ]
+        }
+
+        this.graphql.client.writeQuery(
+          {
+            query:QUERY_GET_MESSAGES,
+            variables:{_id:this.routeId},
+            data:data
+          }
+        )
+      },
+      error:e => {
+        var caches = [...this.isCached() as any[]]
+        var [filter] = caches.filter(c => c._id === _id)
+        var index = caches.findIndex(c => c._id === _id)
+
+        caches[index] = {
+          ...filter,
+          status:'failedSend'
+        }
+
+        var data = {
+          getMessages:[
+            ...caches
+          ]
+        }
+
+        this.graphql.client.writeQuery(
+          {
+            query:QUERY_GET_MESSAGES,
+            variables:{_id:this.routeId},
+            data:data
+          }
+        )
+      }
     })
   }
 
@@ -94,35 +138,8 @@ export class MessageComponent implements OnInit {
     
   }
 
-  setHistoryAndGroupId(){
-    var [filter] = this.history().filter(h => {
-      return h._id === this.profile2.usersRef
-    })
-
-    if(filter){
-      // set groupId
-      this.groupId = filter.groupId
-    }
-
-    if(!filter){
-      var groupId = new Types.ObjectId()
-      var groupIdStr = groupId.toString()
-      
-      // tambahkan history terbaru
-      this.store.dispatch(new AddHistory({
-        _id:this.profile2.usersRef,
-        groupId:groupIdStr,
-        profile:this.profile2,
-        lastMessage:null
-      }))
-
-      // buat groupId
-      this.groupId = groupIdStr
-    }
-  }
-
   isCached(){
-    var cache = this.graphql.client.readQuery<Graphql.GetMessagesResult>(
+    var cache = this.graphql.client.cache.readQuery<Graphql.GetMessagesResult>(
       {
         query:QUERY_GET_MESSAGES,
         variables:{_id:this.routeId}
@@ -130,39 +147,130 @@ export class MessageComponent implements OnInit {
     )
 
     this.fetchPolicy = cache ? 'cache-only':'network-only'
-
     
     return cache?.getMessages
   }
 
   fetch(_id:string){
     var variables = {
-      $_id:_id
+      _id:_id
     }
     this.graphql.query<Graphql.GetMessagesResult,typeof variables>({
       query:QUERY_GET_MESSAGES,
       fetchPolicy:this.fetchPolicy,
       variables
     })
-    .subscribe(r => {
-      console.log(r)
+    .subscribe({
+      next:r => {
+        var messages = r.data.getMessages
+        var message = messages[messages.length - 1]
+        var getHistory = [...this.historyCaches.getHistory]
+        var [filter] = getHistory.filter((h:any) => {
+          var ref = this.profile2.usersRef
+          return h.profile.usersRef
+        })
+       
+        var index = getHistory.findIndex((h:any) => {
+          var ref = this.profile2.usersRef
+          return h.profile.usersRef
+        })
+
+        getHistory[index] = {
+          ...filter,
+          message
+        }
+        this.graphql.client.cache.writeQuery({
+          query:QUERY_GET_HISTORY,
+          data:{getHistory}
+        })
+  
+        this.historyCaches = this.graphql.client.cache.readQuery({
+          query:QUERY_GET_HISTORY
+        })
+      },
+      error:e => {
+        alert(e.messafe)
+      }
     })
+  }
+
+ 
+
+  createHistory(x:boolean){
+    var message = null
+    var profile = this.profile2
+    if(x){
+      let getHistory = [{
+        message,
+        profile,
+        __typename:'History'
+      }]
+
+      this.graphql.client.cache.writeQuery({
+        query:QUERY_GET_HISTORY,
+        data:{getHistory}
+      })
+
+      this.historyCaches = this.graphql.client.cache.readQuery({
+        query:QUERY_GET_HISTORY
+      })
+    }
+    else{
+      let h = {
+        profile,
+        message,
+        __typename:'History'
+      }
+      var getHistory = [
+        ...this.historyCaches.getHistory,
+        h
+      ]
+
+      this.graphql.client.cache.writeQuery({
+        query:QUERY_GET_HISTORY,
+        data:{getHistory}
+      })
+
+      this.historyCaches = this.graphql.client.cache.readQuery({
+        query:QUERY_GET_HISTORY
+      })
+    }
   }
 
   ngOnInit(){
     this.url = this.route.url.subscribe(c => {   
       if(this.route.snapshot.params['_id'] !== this.routeId){
         this.routeId = this.route.snapshot.params['_id']
-        this.groupId = window.history.state.groupId
         this.profile2 = window.history.state._
         this.isCached()
         this.fetch(this.routeId)
-        this.setHistoryAndGroupId()
       }
       else{
         this.isCached()
         this.fetch(this.routeId)
-        this.setHistoryAndGroupId()
+
+        if(!this.historyCaches){
+          this.graphql.client.cache.writeQuery({
+            query:QUERY_GET_HISTORY,
+            data:{getHistory:[]}
+          })
+
+          this.historyCaches = this.graphql.client.cache.readQuery({
+            query:QUERY_GET_HISTORY
+          })
+
+          this.createHistory(true)
+        }
+        else{
+         var [f] = this.historyCaches.getHistory.filter(
+           (h:any) => {
+             var ref = this.profile2.usersRef
+             return h.profile.usersRef === ref
+           }
+         )
+
+         if(!f) this.createHistory(false)
+        }
       }
     })
   }

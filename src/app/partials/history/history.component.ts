@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, Input, OnChanges, OnInit, SimpleChanges, inject, input } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { Store } from '@ngxs/store';
+import { GraphqlService } from '../../graphql/graphql.service';
+import { QUERY_GET_HISTORY } from '../../graphql/graphql.queries';
 
 @Component({
   selector: 'app-history',
@@ -9,20 +11,21 @@ import { Store } from '@ngxs/store';
   templateUrl: './history.component.html',
   styleUrl: './history.component.css'
 })
-export class HistoryComponent {
+export class HistoryComponent implements OnChanges {
   store = inject(Store)
   router = inject(Router)
+  graphql = inject(GraphqlService)
+  @Input() _caches!:{getHistory:any[]}
   profile = this.store.selectSnapshot<Shared.Profile>(s => {
     return s.profile
   })
-  history = this.store.selectSignal<Ngxs.History[]>(s => {
-    return s.history
+  caches = this.graphql.client.cache.readQuery<any>({
+    query:QUERY_GET_HISTORY
   })
 
-  select(usersRef:string){
-    var [filter] = this.history().filter(
-      h => h.profile.usersRef = usersRef
-    )
-    return filter.profile
+  ngOnChanges(changes:SimpleChanges) {
+    this.caches = this.graphql.client.cache.readQuery<any>({
+      query:QUERY_GET_HISTORY
+    })
   }
 }

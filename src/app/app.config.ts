@@ -14,10 +14,6 @@ import { withNgxsStoragePlugin } from '@ngxs/storage-plugin';
 import { AuthorizationState } from './store/authorization/authorization.state';
 import { ProfileState } from './store/profile/profile.state';
 import { httpInterceptor } from './interceptors/http/http.interceptor';
-import { HistoryState } from './store/history/history.state';
-import { MessagesState } from './store/messages/messages.state';
-
-
 const uri = 'https://8000-idx-nest-3141825-1736324093764.cluster-3g4scxt2njdd6uovkqyfcabgo6.cloudworkstations.dev/graphql'
 
 const initCache = async () => {
@@ -33,7 +29,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptors([httpInterceptor])),
     provideRouter(routes),
     provideStore(
-      [AuthorizationState,ProfileState,HistoryState,MessagesState], 
+      [AuthorizationState,ProfileState], 
       withNgxsStoragePlugin({keys: '*'}),
       withNgxsLoggerPlugin(),
     ),

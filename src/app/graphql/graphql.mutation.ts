@@ -28,7 +28,6 @@ export const MUTATION_SEND_MESSAGE = gql`
       sender
       receiver
       value
-      groupId
       contentType
       description
       read
