@@ -35,3 +35,25 @@ export const MUTATION_SEND_MESSAGE = gql`
     }
   }
 `
+
+export const MUTATION_UPDATE_MESSAGE = gql`
+  mutation($dto:UpdateMessageDto!){
+    updateMessage(dto:$dto){
+      matchedCount
+      modifiedCount
+      upsertedCount
+      acknowledged
+    }
+  }
+`
+
+export const MUTATION_UPDATE_MESSAGE_BY_SENDER = gql`
+  mutation($dto:UpdateMessageDto!){
+    updateMessageBySender(dto:$dto){
+      matchedCount
+      modifiedCount
+      upsertedCount
+      acknowledged
+    }
+  }
+`

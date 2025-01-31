@@ -54,7 +54,7 @@ declare global{
         contentType:string,
         description:string,
         sendAt:number,
-        status:string
+        status?:string
       }[]
     }
   }
